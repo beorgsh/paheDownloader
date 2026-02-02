@@ -62,11 +62,7 @@ export const Modal: React.FC<Props> = ({ anime, onClose }) => {
 
   const handleEpisodeClick = async (ep: Episode) => {
     if (!anime) return;
-    // If clicking same episode, toggle off
-    if (selectedEp?.session === ep.session) {
-        setSelectedEp(null);
-        return;
-    }
+    // Always open/re-open selection for the clicked episode
     setSelectedEp(ep);
     setDownloadLoading(true);
     setDownloadLinks(null);
@@ -193,60 +189,6 @@ export const Modal: React.FC<Props> = ({ anime, onClose }) => {
               ) : (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 h-full flex flex-col pb-10">
                   
-                  {/* Download Panel (Sticky if selected) */}
-                  {selectedEp && (
-                      <div className="bg-cyan-950/10 border border-cyan-500/20 rounded-xl md:rounded-2xl p-4 md:p-6 mb-4 md:mb-6 animate-in zoom-in-95 duration-200 shrink-0">
-                           <div className="flex items-center justify-between mb-4 md:mb-6">
-                              <div className="flex flex-col">
-                                  <span className="text-cyan-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1">Selected</span>
-                                  <span className="text-white font-bold text-lg md:text-xl">Episode {selectedEp.episode}</span>
-                              </div>
-                              <button onClick={() => setSelectedEp(null)} className="text-slate-500 hover:text-white transition-colors">
-                                  <X size={18} />
-                              </button>
-                          </div>
-                          
-                          {downloadLoading ? (
-                               <div className="flex items-center gap-3 text-slate-400 text-sm">
-                                  <Loader2 size={16} className="animate-spin text-cyan-500" />
-                                  <span>Fetching secure mirrors...</span>
-                               </div>
-                          ) : downloadLinks ? (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                                  {subLinks.length > 0 && (
-                                      <div className="space-y-2 md:space-y-3">
-                                          <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                              <Languages size={14} /> Subtitled
-                                          </div>
-                                          <div className="flex flex-col gap-2">
-                                              {subLinks.map((item, idx) => (
-                                                  <MinimalDownloadButton key={idx} item={item} onSelect={setStreamUrl} />
-                                              ))}
-                                          </div>
-                                      </div>
-                                  )}
-                                  {dubLinks.length > 0 && (
-                                      <div className="space-y-2 md:space-y-3">
-                                          <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                              <Mic size={14} /> Dubbed
-                                          </div>
-                                          <div className="flex flex-col gap-2">
-                                              {dubLinks.map((item, idx) => (
-                                                  <MinimalDownloadButton key={idx} item={item} onSelect={setStreamUrl} variant="pink" />
-                                              ))}
-                                          </div>
-                                      </div>
-                                  )}
-                                  {subLinks.length === 0 && dubLinks.length === 0 && (
-                                      <p className="text-red-400 text-sm">No mirrors found.</p>
-                                  )}
-                              </div>
-                          ) : (
-                              <p className="text-red-400 text-sm">Connection failed.</p>
-                          )}
-                      </div>
-                  )}
-
                   {/* Navigation & List */}
                   <div className="flex items-center justify-between sticky top-0 bg-[#09090b] z-10 py-2 shrink-0">
                       <h3 className="text-xs md:text-sm font-bold text-slate-200 uppercase tracking-wider">Episodes</h3>
@@ -294,11 +236,6 @@ export const Modal: React.FC<Props> = ({ anime, onClose }) => {
                                       <span className="absolute bottom-1.5 left-2 text-[10px] md:text-xs font-bold text-white group-hover:text-cyan-400 transition-colors">
                                           EP {ep.episode}
                                       </span>
-                                      {selectedEp?.episode === ep.episode && (
-                                          <div className="absolute inset-0 bg-cyan-500/20 flex items-center justify-center">
-                                              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,1)] animate-pulse" />
-                                          </div>
-                                      )}
                                   </div>
                               ))}
                           </div>
@@ -312,6 +249,69 @@ export const Modal: React.FC<Props> = ({ anime, onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* Selection Modal (Mirrors/Links) */}
+      {selectedEp && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelectedEp(null)}>
+            <div 
+                className="bg-[#18181b] border border-white/10 w-full max-w-lg p-6 rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-200"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex flex-col">
+                        <span className="text-cyan-500 text-xs font-bold uppercase tracking-widest mb-1">Watch</span>
+                        <span className="text-white font-bold text-xl">Episode {selectedEp.episode}</span>
+                    </div>
+                    <button onClick={() => setSelectedEp(null)} className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {downloadLoading ? (
+                     <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
+                        <Loader2 size={32} className="animate-spin text-cyan-500" />
+                        <span className="text-sm">Fetching streams...</span>
+                     </div>
+                ) : downloadLinks ? (
+                    <div className="space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                        {subLinks.length > 0 && (
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider sticky top-0 bg-[#18181b] py-1">
+                                    <Languages size={14} /> Subtitled
+                                </div>
+                                <div className="grid gap-2">
+                                    {subLinks.map((item, idx) => (
+                                        <MinimalDownloadButton key={idx} item={item} onSelect={(link) => setStreamUrl(link)} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {dubLinks.length > 0 && (
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider sticky top-0 bg-[#18181b] py-1">
+                                    <Mic size={14} /> Dubbed
+                                </div>
+                                <div className="grid gap-2">
+                                    {dubLinks.map((item, idx) => (
+                                        <MinimalDownloadButton key={idx} item={item} onSelect={(link) => setStreamUrl(link)} variant="pink" />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {subLinks.length === 0 && dubLinks.length === 0 && (
+                            <div className="py-8 text-center">
+                                <p className="text-red-400/80 text-sm">No stream sources found for this episode.</p>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="py-8 text-center">
+                        <p className="text-red-400 text-sm">Failed to connect to server.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+      )}
 
       {/* Stream Player Modal Overlay */}
       {streamUrl && (
@@ -368,9 +368,9 @@ const MinimalDownloadButton: React.FC<{ item: DownloadItem, onSelect: (link: str
     return (
         <button 
             onClick={() => onSelect(item.link)}
-            className={`group flex items-center justify-between w-full p-2.5 md:p-3 rounded-lg md:rounded-xl border transition-all duration-300 ${isCyan ? 'bg-cyan-500/5 border-cyan-500/10 hover:bg-cyan-500/10 hover:border-cyan-500/30' : 'bg-pink-500/5 border-pink-500/10 hover:bg-pink-500/10 hover:border-pink-500/30'}`}
+            className={`group flex items-center justify-between w-full p-3 rounded-xl border transition-all duration-200 ${isCyan ? 'bg-cyan-500/5 border-cyan-500/10 hover:bg-cyan-500/10 hover:border-cyan-500/30' : 'bg-pink-500/5 border-pink-500/10 hover:bg-pink-500/10 hover:border-pink-500/30'}`}
         >
-            <span className={`text-[10px] md:text-xs font-medium truncate pr-4 ${isCyan ? 'text-cyan-200' : 'text-pink-200'}`}>{item.name}</span>
+            <span className={`text-xs font-medium truncate pr-4 ${isCyan ? 'text-cyan-200' : 'text-pink-200'}`}>{item.name}</span>
             <Play size={14} className={`${isCyan ? 'text-cyan-500' : 'text-pink-500'} opacity-50 group-hover:opacity-100 transition-opacity`} />
         </button>
     )
